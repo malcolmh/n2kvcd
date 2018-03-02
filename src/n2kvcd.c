@@ -54,30 +54,27 @@ static void fake_syslog(int priority, const char *format, ...) {
 typedef void (*syslog_t)(int priority, const char *format, ...);
 static syslog_t syslogger = syslog;
 
-static int running;   // Main loop flag
-static int exit_code; // Signal handler return val.
-static char *tty;     // Device string
-static char *can;     // VCAN string
+static bool running;  // Main loop flag
+static int exit_code; // Signal handler return value
 static int dev;       // FD for device
 static int vci;       // FD for VCAN
 
-static void child_handler(int signum)
-{
+static void child_handler(int signum) {
 	switch (signum) {
 	case SIGUSR1:
 		exit(EXIT_SUCCESS);
 		break;
 	case SIGALRM:
 	case SIGCHLD:
-		syslogger(LOG_NOTICE, "received signal %i on %s", signum, tty);
+		syslogger(LOG_NOTICE, "received signal %i", signum);
 		exit_code = EXIT_FAILURE;
-		running = 0;
+		running = false;
 		break;
 	case SIGINT:
 	case SIGTERM:
-		syslogger(LOG_NOTICE, "received signal %i on %s", signum, tty);
+		syslogger(LOG_NOTICE, "received signal %i", signum);
 		exit_code = EXIT_SUCCESS;
-		running = 0;
+		running = false;
 		break;
 	}
 }
@@ -225,6 +222,7 @@ void* vci2dev(void* x) {
 int main(int argc, char *argv[]) {
 	struct termios attr;
   int run_as_daemon = ((argc > 3) && (*argv[3] == 'D')) ? 0 : 1;
+  running = true;
 
   if (argc >= 3) {
     if (!run_as_daemon) {
@@ -232,8 +230,8 @@ int main(int argc, char *argv[]) {
     }
     openlog(DAEMON_NAME, LOG_PID, LOG_LOCAL5);
 
-    tty = argv[1];
-    can = argv[2];
+    char* tty = argv[1];
+    char* can = argv[2];
 
     if (run_as_daemon) {
       if (daemon(0, 0)) {
@@ -244,8 +242,6 @@ int main(int argc, char *argv[]) {
       signal(SIGINT, child_handler);
       signal(SIGTERM, child_handler);
     }
-
-    running = 1;
 
     /* Open device */
 
