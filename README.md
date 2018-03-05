@@ -12,4 +12,4 @@ requires each PGN to be enabled. This can be done using "NMEA Reader" from Actis
 
 Building & running requires the shared library libmnd to be installed. See: github.com/victronenergy/libmnd
 
-Building: cc -o n2kvcd n2kvcd.c -lmnd [-pthread]
+Building: cc -o n2kvcd n2kvcd.c -lmnd -pthread
